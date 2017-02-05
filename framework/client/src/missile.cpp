@@ -27,7 +27,7 @@ Missile::Missile(char* filename, float x, float y, float w, int shipid ) :
 
 	x_ += velocity_x_ * 0.5f;
 	y_ += velocity_y_ * 0.5f;
-
+	w_ = atan2(velocity_y_, velocity_x_);
 }
 
 Missile::~Missile()
@@ -52,60 +52,31 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 
 	oldx = x_;
 	oldy = y_;
-	x_ += velocity_x_ * timedelta;
-	y_ += velocity_y_ * timedelta;
+	
 
 	for (std::vector<Ship*>::iterator thisship = shiplist.begin();
 		thisship != shiplist.end(); thisship++)
 	{
-		if (HasCollided((*(*thisship))) && (*thisship)->getActive())
+		if (HasCollided((*(*thisship))) && (*thisship)->getActive() && ownerid != (*thisship)->GetID())
 		{
 			// if both are stuck
-			(*thisship)->getHealth() -= 20;
+			(*thisship)->getHealth() -= 50;
 			isDestroyed = true;
 			return true;
-
-			/*
-			if( GetAbsoluteMag( velocity_y_ ) > GetAbsoluteMag( (*thisship)->velocity_y_ ) )
-			{
-				// asteroid transfers vel to ship
-				(*thisship)->velocity_y_ += velocity_y_/3;
-				velocity_y_ = - velocity_y_;
-			}
-			else
-			{
-				// ship transfers vel to asteroid
-				velocity_y_ += (*thisship)->velocity_y_/3;	
-				(*thisship)->velocity_y_ = -(*thisship)->velocity_y_;
-				
-			}
-
-			if( GetAbsoluteMag( velocity_x_ ) > GetAbsoluteMag( (*thisship)->velocity_x_ ) )
-			{
-				(*thisship)->velocity_x_ += velocity_x_/3;
-				velocity_x_ = - velocity_x_;
-			}
-			else
-			{
-				velocity_x_ += (*thisship)->velocity_x_/3;	
-				(*thisship)->velocity_x_ = -(*thisship)->velocity_x_;
-
-			}
-
-			if( velocity_x_ == 0.0 && (*thisship)->velocity_x_ == 0.0 )
-			{
-				if( velocity_y_ == 0.0 && (*thisship)->velocity_y_ == 0.0 )
-				{
-					// is very stuck
-					// gimpy reset asteroid location
-					x_ = 200;
-					y_ = 200;
-				}
-			}
-			*/
+		}
+		else if (ownerid != (*thisship)->GetID() && (*thisship)->getActive())//homing, since there is only 2 ships everytime in the server.
+		{
+			float newVelX, newVelY, length;
+			newVelX = (*thisship)->GetX() - x_;
+			newVelY = (*thisship)->GetY() - y_;
+			length = sqrt(newVelX * newVelX + newVelY * newVelY);
+			velocity_x_ = (newVelX / length) * 100;
+			velocity_y_ = (newVelY / length) * 100;
+			w_ = atan2(velocity_y_, velocity_x_);
 		}
 	}
-
+	x_ += velocity_x_ * timedelta;
+	y_ += velocity_y_ * timedelta;
 	
 	float screenwidth = static_cast<float>(hge->System_GetState(HGE_SCREENWIDTH));
 	float screenheight = static_cast<float>(hge->System_GetState(HGE_SCREENHEIGHT));

@@ -66,6 +66,7 @@ class Ship
 	int health;
 
 	bool active;
+	bool haveMissile;
 
 	float timerForRespawn;
 public:
@@ -194,7 +195,15 @@ public:
         ratio_ = 0;
     }
 #endif
+	void setHaveMissile(bool toggle)
+	{
+		haveMissile = toggle;
+	}
 
+	bool getHaveMissile()
+	{
+		return haveMissile;
+	}
 };
 
 #define GET_ABSOLUTE_MSG(num) ( (num<0) ? (-num) : (num) )

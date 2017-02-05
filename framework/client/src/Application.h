@@ -8,6 +8,8 @@
 #include "missile.h"
 #include "textbox.h"
 #include "explosion.h"
+#include "bullets.h"
+#include "buff.h"
 
 class HGE;
 class RakPeerInterface;
@@ -54,11 +56,27 @@ class Application
 	void CreateMissile( float x, float y, float w, int id );
 	bool RemoveMissile( float x, float y, float w, int id );
 
+	void CreateBullets(float x, float y, float w, int id);
+	bool RemoveBullets(float x, float y, float w, int id);
+
 	Explosion* FetchBoom();
 	std::vector<Explosion *> boomList;
 	void RenderBoomList();
 	void UpdateBoomList(float dt);
 	
+	Bullets* FetchBullets();
+	Bullets* FetchEnemyBullets();
+	std::vector<Bullets *> friendlyBulletList;
+	std::vector<size_t> inactive_friendlyBulletList;
+	std::vector<Bullets *> enemyBulletList;
+	std::vector<size_t> inactive_enemyBulletList;
+
+	Buff* FetchBuff();
+	std::vector<Buff *> buffList;
+	std::vector<size_t> inactive_buffList;
+	float bulletFireRate;
+
+	//bool haveMissile;
 
 public:
 	Application();

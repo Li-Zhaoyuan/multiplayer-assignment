@@ -20,6 +20,7 @@ class Missile
 	float w_; //!< The angular position of the ship
 	float velocity_x_; //!< The resolved velocity of the ship along the x-axis
 	float velocity_y_; //!< The resolved velocity of the ship along the y-axis
+	
 	hgeRect collidebox;
 	int ownerid;
 

@@ -13,7 +13,10 @@
 
 ServerApp::ServerApp() : 
 	rakpeer_(RakNetworkFactory::GetRakPeerInterface()),
-	newID(0)
+	newID(0),
+	dt(0.f),
+	timeFromLastFrame(0.f),
+	timeToSpawnPowerUp(0.f)
 {
     rakpeer_->Startup( 100, 30, &SocketDescriptor( DFL_PORTNUMBER, 0 ), 1 );
     rakpeer_->SetMaximumIncomingConnections( DFL_MAX_CONNECTION );
@@ -29,10 +32,25 @@ ServerApp::~ServerApp()
 
 void ServerApp::Loop()
 {
+	dt = (RakNet::GetTime() - timeFromLastFrame)/1000;
+	timeFromLastFrame = RakNet::GetTime();
+	if (clients_.size() >= 2)
+	{
+		timeToSpawnPowerUp += dt;
+		if (timeToSpawnPowerUp >= 10.f)
+		{
+			spawnPowerUp();
+			timeToSpawnPowerUp = 0.f;
+		}
+	}
+	else
+	{
+		timeToSpawnPowerUp = 0.f;
+	}
 	if (Packet* packet = rakpeer_->Receive())
 	{
 		RakNet::BitStream bs(packet->data, packet->length, false);
-		
+		RakNet::GetTime();
 		unsigned char msgid = 0;
 		RakNetTime timestamp = 0;
 
@@ -63,6 +81,8 @@ void ServerApp::Loop()
 				bs.Read( x_ );
 				bs.Read( y_ );
                 bs.Read( type_ );
+				bs.Read(screenwidth);
+				bs.Read(screenheight);
 				ProcessInitialPosition( packet->systemAddress, x_, y_, type_);
 			}
 			break;
@@ -80,14 +100,41 @@ void ServerApp::Loop()
 				bs.ResetReadPointer();
 				rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
 			break;
+		case ID_NEWBULLET:
+			bs.ResetReadPointer();
+			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+			break;
+		case ID_UPDATEBULLET:
+			bs.ResetReadPointer();
+			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
+			break;
 		default:
 			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 		}
 
 		rakpeer_->DeallocatePacket(packet);
 	}
+	
 }
+void ServerApp::spawnPowerUp()
+{
+	float RrandomY = rand() % 400 + 100;
+	float LrandomY = rand() % 400 + 100;
+	int buffType = rand() % 2;
 
+	for (ClientMap::iterator it = clients_.begin(); it != clients_.end(); ++it)
+	{
+		unsigned char msgid = ID_NEWBUFF;
+		RakNet::BitStream bs;
+		bs.Write(msgid);
+		bs.Write(screenwidth/4);
+		bs.Write(RrandomY);
+		bs.Write((screenwidth / 4) * 3);
+		bs.Write(LrandomY);
+		bs.Write(buffType);
+		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
+	}
+}
 void ServerApp::SendWelcomePackage(SystemAddress& addr)
 {
 	++newID;

@@ -30,11 +30,17 @@ class ServerApp
 	SystemAddress players[2];
 
     unsigned int newID;
+	float dt;
+	float timeFromLastFrame;
+	float timeToSpawnPowerUp;
+	float screenwidth;
+	float screenheight;
 	
 	void SendWelcomePackage(SystemAddress& addr);
 	void SendDisconnectionNotification(SystemAddress& addr);
 	void ProcessInitialPosition( SystemAddress& addr, float x_, float y_, int type_);
     void UpdatePosition( SystemAddress& addr, float x_, float y_ );
+	void spawnPowerUp();
 public:
 	ServerApp();
 	~ServerApp();

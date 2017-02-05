@@ -28,6 +28,7 @@ Ship::Ship( int type, float locx_, float locy_ )
 , collidetimer( 0 )
 , health(100)
 , timerForRespawn(0.f)
+, haveMissile(false)
 #ifdef INTERPOLATEMOVEMENT
 , server_w_( 0 )
 , client_w_( 0 )
