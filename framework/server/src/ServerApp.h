@@ -33,14 +33,18 @@ class ServerApp
 	float dt;
 	float timeFromLastFrame;
 	float timeToSpawnPowerUp;
+	float timeToSpawnBlackHole;
 	float screenwidth;
 	float screenheight;
+
+	bool haveBlackHole;
 	
 	void SendWelcomePackage(SystemAddress& addr);
 	void SendDisconnectionNotification(SystemAddress& addr);
 	void ProcessInitialPosition( SystemAddress& addr, float x_, float y_, int type_);
     void UpdatePosition( SystemAddress& addr, float x_, float y_ );
 	void spawnPowerUp();
+	void spawnBlackHole();
 public:
 	ServerApp();
 	~ServerApp();

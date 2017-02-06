@@ -33,6 +33,7 @@ void Buff::initialise(float x, float y, int buffType)
 {
 	x_ = x;
 	y_ = y;
+	isTouched = false;
 	HGE* hge = hgeCreate(HGE_VERSION);
 	hge->Texture_Free(tex_);
 	hge->Release();

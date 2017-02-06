@@ -10,7 +10,8 @@
 Missile::Missile(char* filename, float x, float y, float w, int shipid ) :
 	angular_velocity(0),
 	isDestroyed(false),
-	isDespawned(false)
+	isDespawned(false),
+	active(true)
 {
 	HGE* hge = hgeCreate(HGE_VERSION);
 	tex_ = hge->Texture_Load(filename);
@@ -62,6 +63,7 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 			// if both are stuck
 			(*thisship)->getHealth() -= 50;
 			isDestroyed = true;
+			active = false;
 			return true;
 		}
 		else if (ownerid != (*thisship)->GetID() && (*thisship)->getActive())//homing, since there is only 2 ships everytime in the server.
@@ -97,6 +99,7 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 		(y_ > screenheight + spriteheight / 2))
 	{
 		isDespawned = true;
+		active = false;
 		return true;
 	}
 		
@@ -106,6 +109,7 @@ bool Missile::Update(std::vector<Ship*> &shiplist, float timedelta)
 
 void Missile::Render()
 {
+	if (active)
 	sprite_->RenderEx(x_, y_, w_);
 }
 
@@ -114,4 +118,11 @@ bool Missile::HasCollided( Ship &ship )
 	sprite_->GetBoundingBox( x_, y_, &collidebox);
 
 	return collidebox.Intersect( ship.GetBoundingBox() );
+}
+
+hgeRect* Missile::GetBoundingBox()
+{
+	sprite_->GetBoundingBox(x_, y_, &collidebox);
+
+	return &collidebox;
 }

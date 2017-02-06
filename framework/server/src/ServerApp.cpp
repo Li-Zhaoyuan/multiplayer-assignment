@@ -16,7 +16,8 @@ ServerApp::ServerApp() :
 	newID(0),
 	dt(0.f),
 	timeFromLastFrame(0.f),
-	timeToSpawnPowerUp(0.f)
+	timeToSpawnPowerUp(0.f),
+	timeToSpawnBlackHole(0.f)
 {
     rakpeer_->Startup( 100, 30, &SocketDescriptor( DFL_PORTNUMBER, 0 ), 1 );
     rakpeer_->SetMaximumIncomingConnections( DFL_MAX_CONNECTION );
@@ -37,15 +38,22 @@ void ServerApp::Loop()
 	if (clients_.size() >= 2)
 	{
 		timeToSpawnPowerUp += dt;
+		timeToSpawnBlackHole += dt;
 		if (timeToSpawnPowerUp >= 10.f)
 		{
 			spawnPowerUp();
 			timeToSpawnPowerUp = 0.f;
 		}
+		if (timeToSpawnBlackHole > 15.f)
+		{
+			spawnBlackHole();
+			timeToSpawnBlackHole = 0.f;
+		}
 	}
 	else
 	{
 		timeToSpawnPowerUp = 0.f;
+		timeToSpawnBlackHole = 0.f;
 	}
 	if (Packet* packet = rakpeer_->Receive())
 	{
@@ -104,10 +112,10 @@ void ServerApp::Loop()
 			bs.ResetReadPointer();
 			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
 			break;
-		case ID_UPDATEBULLET:
+		/*case ID_UPDATEBULLET:
 			bs.ResetReadPointer();
 			rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE, 0, packet->systemAddress, true);
-			break;
+			break;*/
 		default:
 			std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 		}
@@ -135,6 +143,23 @@ void ServerApp::spawnPowerUp()
 		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
 	}
 }
+
+void ServerApp::spawnBlackHole()
+{
+	float randomY = rand() % 400 + 100;
+	float X = (screenwidth / 2);
+	for (ClientMap::iterator it = clients_.begin(); it != clients_.end(); ++it)
+	{
+		unsigned char msgid = ID_SPAWNBLACKHOLE;
+		RakNet::BitStream bs;
+		bs.Write(msgid);
+		bs.Write(X);
+		bs.Write(randomY);
+		
+		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
+	}
+}
+
 void ServerApp::SendWelcomePackage(SystemAddress& addr)
 {
 	++newID;

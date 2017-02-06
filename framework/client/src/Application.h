@@ -10,6 +10,7 @@
 #include "explosion.h"
 #include "bullets.h"
 #include "buff.h"
+#include "blackhole.h"
 
 class HGE;
 class RakPeerInterface;
@@ -40,6 +41,9 @@ class Application
 	TextBox *rejectBox;
 	TextBox *destoryedShipText;
 	TextBox *youDiedText;
+	TextBox *missileReadyText;
+	TextBox *haveMissileText;
+	TextBox *ammoLeftText;
 	RakPeerInterface* rakpeer_;
 	unsigned int timer_;
 	int totalsent_;
@@ -67,14 +71,19 @@ class Application
 	Bullets* FetchBullets();
 	Bullets* FetchEnemyBullets();
 	std::vector<Bullets *> friendlyBulletList;
-	std::vector<size_t> inactive_friendlyBulletList;
+	//std::vector<size_t> inactive_friendlyBulletList;
 	std::vector<Bullets *> enemyBulletList;
-	std::vector<size_t> inactive_enemyBulletList;
+	//std::vector<size_t> inactive_enemyBulletList;
 
 	Buff* FetchBuff();
+	Buff* FetchEnemyBuff();
 	std::vector<Buff *> buffList;
-	std::vector<size_t> inactive_buffList;
+	std::vector<Buff *> enemybuffList;
+	//std::vector<size_t> inactive_buffList;
 	float bulletFireRate;
+	int activeBullets;
+
+	Blackhole* blackHole;
 
 	//bool haveMissile;
 

@@ -113,3 +113,10 @@ bool Bullets::HasCollided(Ship &ship)
 
 	return collidebox.Intersect(ship.GetBoundingBox());
 }
+
+hgeRect* Bullets::GetBoundingBox()
+{
+	sprite_->GetBoundingBox(x_, y_, &collidebox);
+
+	return &collidebox;
+}

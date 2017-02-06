@@ -26,6 +26,7 @@ class Missile
 
 	bool isDestroyed;
 	bool isDespawned;
+	bool active;
 
 public:
 	float angular_velocity;
@@ -34,6 +35,7 @@ public:
 	bool Update(std::vector<Ship*> &shiplist, float timedelta);
 	void Render();
 	bool HasCollided( Ship &ship );
+	hgeRect* GetBoundingBox();
 
 	void UpdateLoc( float x, float y, float w )
 	{
@@ -80,6 +82,18 @@ public:
 	void SetIsDesapwn(bool toggle)
 	{
 		isDespawned = toggle;
+	}
+	bool &getActive()
+	{
+		return active;
+	}
+	float &getVelocityX()
+	{
+		return velocity_x_;
+	}
+	float &getVelocityY()
+	{
+		return velocity_y_;
 	}
 };
 

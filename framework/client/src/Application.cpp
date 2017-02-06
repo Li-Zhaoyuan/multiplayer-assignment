@@ -28,6 +28,9 @@ Application::Application() :
 	rejectBox(0),
 	destoryedShipText(0),
 	youDiedText(0),
+	missileReadyText(0),
+	haveMissileText(0),
+	ammoLeftText(0),
 	rakpeer_(RakNetworkFactory::GetRakPeerInterface()),
 	timer_( 0 ),
 	totalsent_(0),
@@ -60,6 +63,12 @@ Application::~Application() throw()
 	destoryedShipText = 0;
 	delete youDiedText;
 	youDiedText = 0;
+	delete haveMissileText;
+	haveMissileText = 0;
+	delete missileReadyText;
+	missileReadyText = 0;
+	delete ammoLeftText;
+	ammoLeftText = 0;
 
 	while (boomList.size() > 0)
 	{
@@ -75,10 +84,10 @@ Application::~Application() throw()
 		friendlyBulletList.pop_back();
 	}
 
-	if (!inactive_friendlyBulletList.empty())
+	/*if (!inactive_friendlyBulletList.empty())
 	{
 		inactive_friendlyBulletList.clear();
-	}
+	}*/
 	while (enemyBulletList.size() > 0)
 	{
 		Bullets *ex = enemyBulletList.back();
@@ -86,10 +95,10 @@ Application::~Application() throw()
 		enemyBulletList.pop_back();
 	}
 
-	if (!inactive_enemyBulletList.empty())
+	/*if (!inactive_enemyBulletList.empty())
 	{
 		inactive_enemyBulletList.clear();
-	}
+	}*/
 	while (buffList.size() > 0)
 	{
 		Buff *ex = buffList.back();
@@ -97,12 +106,15 @@ Application::~Application() throw()
 		buffList.pop_back();
 	}
 
-	if (!inactive_buffList.empty())
+	/*if (!inactive_buffList.empty())
 	{
 		inactive_buffList.clear();
-	}
+	}*/
 
-	
+	if (blackHole != NULL)
+	{
+		delete blackHole;
+	}
 
 	Shutdown();
 	rakpeer_->Shutdown(100);
@@ -142,6 +154,12 @@ bool Application::Init()
 		destoryedShipText->SetPos(5, screenheight / 2);
 		youDiedText = new TextBox("font1.fnt");
 		youDiedText->SetPos(5, screenheight / 2 - 10);
+		haveMissileText = new TextBox("font1.fnt");
+		haveMissileText->SetPos(5, screenheight / 2 - 30);
+		missileReadyText = new TextBox("font1.fnt");
+		missileReadyText->SetPos(5, screenheight / 2 - 50);
+		ammoLeftText = new TextBox("font1.fnt");
+		ammoLeftText->SetPos(5, screenheight / 2 - 70);
 
 		float screenwidth = static_cast<float>(hge_->System_GetState(HGE_SCREENWIDTH));
         int ShipType = rand() % 4 + 1;
@@ -153,6 +171,9 @@ bool Application::Init()
         ships_.push_back( new Ship( ShipType, init_pos_x, init_pos_y ) );
         std::cout << "My Ship: type[" << ShipType << "] x[" << init_pos_x << "] y[" << init_pos_y << "]" << std::endl;
 		ships_.at(0)->SetName("My Ship");
+
+		blackHole = new Blackhole("blackhole.png",0,0,0);
+
 		if (rakpeer_->Startup(1,30,&SocketDescriptor(), 1))
 		{
 			rakpeer_->SetOccasionalPing(true);
@@ -217,7 +238,7 @@ bool Application::Update()
 				ships_.at(0)->setHaveMissile(false);
 		}
 		bulletFireRate += timedelta;
-		if (hge_->Input_GetKeyState(HGEK_SPACE) && bulletFireRate > 0.5f && friendlyBulletList.size() < 3)
+		if (hge_->Input_GetKeyState(HGEK_SPACE) && bulletFireRate > 0.5f && activeBullets < 3)
 		{
 			CreateBullets(ships_.at(0)->GetX(), ships_.at(0)->GetY(), ships_.at(0)->GetW(), ships_.at(0)->GetID());
 			bulletFireRate = 0.f;
@@ -256,11 +277,13 @@ bool Application::Update()
 	// update missiles
 	if( mymissile )
 	{
-		if (mymissile->Update(ships_, timedelta))
+		if (mymissile->Update(ships_, timedelta) || blackHole->Update(mymissile, timedelta, false))
 		{
 			// have collision
-			if (mymissile->GetIsDestroyed())
+			if (mymissile->GetIsDestroyed()
+				|| blackHole->getCollision())
 			{
+				blackHole->setCollision(false);
 				Explosion *ex = FetchBoom();
 				ex->setPos(mymissile->GetX(), mymissile->GetY());
 			}
@@ -272,11 +295,13 @@ bool Application::Update()
 	for (MissileList::iterator missile = missiles_.begin();
 		missile != missiles_.end(); missile++)
 	{
-		if ((*missile)->Update(ships_, timedelta))
+		if ((*missile)->Update(ships_, timedelta) || blackHole->Update(*missile, timedelta, true))
 		{
 			// have collision
-			if ((*missile)->GetIsDestroyed())
+			if ((*missile)->GetIsDestroyed()
+				||blackHole->getCollision())
 			{
+				blackHole->setCollision(false);
 				Explosion *ex = FetchBoom();
 				ex->setPos((*missile)->GetX(), (*missile)->GetY());
 			}
@@ -288,15 +313,18 @@ bool Application::Update()
 
 	if (!friendlyBulletList.empty())
 	{
+		activeBullets = 0;
 		for (std::vector<Bullets*>::iterator it = friendlyBulletList.begin(); it != friendlyBulletList.end(); ++it)
 		{
 			if ((*it)->getActive())
 			{
-				if ((*it)->Update(ships_, timedelta))
+				activeBullets += 1;
+				if ((*it)->Update(ships_, timedelta) || blackHole->Update((*it), timedelta, false))
 				{
 					// have collision
 					if ((*it)->GetIsDestroyed())
 					{
+						blackHole->setCollision(false);
 						Explosion *ex = FetchBoom();
 						ex->setPos((*it)->GetX(), (*it)->GetY());
 					}
@@ -304,8 +332,8 @@ bool Application::Update()
 			}
 			else
 			{
-				delete (*it);
-				inactive_friendlyBulletList.push_back(it - friendlyBulletList.begin());
+				//delete (*it);
+				//inactive_friendlyBulletList.push_back(it - friendlyBulletList.begin());
 			}
 		}
 	}
@@ -315,11 +343,12 @@ bool Application::Update()
 		{
 			if ((*it)->getActive())
 			{
-				if ((*it)->Update(ships_, timedelta))
+				if ((*it)->Update(ships_, timedelta) || blackHole->Update((*it), timedelta, true))
 				{
 					// have collision
-					if ((*it)->GetIsDestroyed())
+					if ((*it)->GetIsDestroyed() ||blackHole->getCollision())
 					{
+						blackHole->setCollision(false);
 						Explosion *ex = FetchBoom();
 						ex->setPos((*it)->GetX(), (*it)->GetY());
 					}
@@ -327,13 +356,14 @@ bool Application::Update()
 			}
 			else
 			{
-				delete (*it);
-				inactive_enemyBulletList.push_back(it - enemyBulletList.begin());
+				//delete (*it);
+				//inactive_enemyBulletList.push_back(it - enemyBulletList.begin());
 			}
 		}
 	}
 
-	if (!inactive_friendlyBulletList.empty())
+	blackHole->Update(timedelta);
+	/*if (!inactive_friendlyBulletList.empty())
 	{
 		for (std::vector<size_t>::reverse_iterator rit = inactive_friendlyBulletList.rbegin(), rend = inactive_friendlyBulletList.rend(); rit != rend; ++rit)
 		{
@@ -349,7 +379,7 @@ bool Application::Update()
 			enemyBulletList.erase(enemyBulletList.begin() + (*rit));
 		}
 		inactive_enemyBulletList.clear();
-	}
+	}*/
 
 
 	if (!buffList.empty())
@@ -370,20 +400,49 @@ bool Application::Update()
 			}
 			else
 			{
-				delete (*it);
-				inactive_buffList.push_back(it - buffList.begin());
+				//delete (*it);
+				//inactive_buffList.push_back(it - buffList.begin());
 			}
 		}
 	}
 
-	if (!inactive_buffList.empty())
+	/*if (!inactive_buffList.empty())
 	{
 		for (std::vector<size_t>::reverse_iterator rit = inactive_buffList.rbegin(), rend = inactive_buffList.rend(); rit != rend; ++rit)
 		{
 			buffList.erase(buffList.begin() + (*rit));
 		}
 		inactive_buffList.clear();
+	}*/
+	std::string havemissiles = "Have Missiles? : ";
+	if (ships_.at(0)->getHaveMissile())
+	{
+		havemissiles.append("true");
 	}
+	else
+	{
+		havemissiles.append("false");
+	}
+	std::string readymissiles = "Able to Fire missile? : ";
+	if (mymissile == NULL)
+	{
+		readymissiles.append("true");
+	}
+	else
+	{
+		readymissiles.append("false");
+	}
+	std::string ammoleft = "Ammo for lasergun : ";
+	ammoleft.append(std::to_string(3 - friendlyBulletList.size()) + "/3");
+	if (friendlyBulletList.size() > 0)
+	{
+		ammoleft.append(" Recharging");
+	}
+	
+  	haveMissileText->mytext_ = havemissiles;
+	missileReadyText->mytext_ = readymissiles;
+	ammoLeftText->mytext_ = ammoleft;
+	
 
 	if (!rejectedFromServer)
 	{
@@ -519,11 +578,11 @@ bool Application::Update()
 			{
 								totalreceived_ += bs.GetNumberOfBytesUsed();
 
-								unsigned int shipid;
-								float server_x, server_y, server_w;
+								unsigned int shipid, bulletShipid;
+								float server_x, server_y, server_w, bulletx,bullety,bulletw;
 								float server_vel_x, server_vel_y, server_vel_angular, time;
 								int health;
-								bool isActive;
+								bool isActive,haveBuff, activeBullet;
 								bs.Read(shipid);
 								std::string str = "";
 								for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
@@ -545,8 +604,32 @@ bool Application::Update()
 											str.append(" has died! Respawning soon! ");
 											
 										}
+										if (!enemybuffList.empty())
+										{
+											for (std::vector<Buff*>::iterator it = enemybuffList.begin(); it != enemybuffList.end(); ++it)
+											{
+												bs.Read(haveBuff);
+												(*it)->getActive() = haveBuff;
+											}
+										}
 
+										if (!enemyBulletList.empty())
+										{
+											for (std::vector<Bullets *>::iterator it = enemyBulletList.begin(); it != enemyBulletList.end(); ++it)
+											{
+												Bullets *bt = (*it);
+												
+												bs.Read(activeBullet);
+												bs.Read(bulletShipid);
+												bs.Read(bulletx);
+												bs.Read(bullety);
+												bs.Read(bulletw);
+												
+												bt->getActive() = activeBullet;
+												bt->initialise(bulletx, bullety, bulletw, bulletShipid);
 
+											}
+										}
 										destoryedShipText->mytext_ = str;
 
 										(*itr)->SetServerLocation(server_x, server_y, server_w);
@@ -680,8 +763,7 @@ bool Application::Update()
 				break;
 			case ID_NEWBUFF:
 			{
-							   Buff* buff1 = FetchBuff();
-							   Buff* buff2 = FetchBuff();
+							   
 							   int buffType;
 							   float x1, x2, y1, y2;
 							   bs.Read(x1);
@@ -689,9 +771,31 @@ bool Application::Update()
 							   bs.Read(x2);
 							   bs.Read(y2);
 							   bs.Read(buffType);
-							   buff1->initialise(x1, y1, buffType);
-							   buff2->initialise(x2, y2, buffType);
+							   if (x1 == ships_.at(0)->GetX())
+							   {
+								   Buff* buff1 = FetchBuff();
+								   Buff* buff2 = FetchEnemyBuff();
+								   buff1->initialise(x1, y1, buffType);
+								   buff2->initialise(x2, y2, buffType);
+							   }
+							   else
+							   {
+								   Buff* buff1 = FetchEnemyBuff();
+								   Buff* buff2 = FetchBuff();
+								   buff1->initialise(x1, y1, buffType);
+								   buff2->initialise(x2, y2, buffType);
+							   }
+							  
 
+			}
+				break;
+			case ID_SPAWNBLACKHOLE:
+			{
+									  float x, y;
+									  bs.Read(x);
+									  bs.Read(y);
+									  blackHole->getActive() = true;
+									  blackHole->initialise(x, y,0);
 			}
 				break;
 			default:
@@ -719,6 +823,27 @@ bool Application::Update()
 			bs2.Write(ships_.at(0)->getTimeToRespawn());
 			bs2.Write(ships_.at(0)->getActive());
 
+			if (!buffList.empty())
+			{
+				for (std::vector<Buff*>::iterator it = buffList.begin(); it != buffList.end(); ++it)
+				{
+					bs2.Write((*it)->getActive());
+					
+				}
+			}
+
+			for (std::vector<Bullets *>::iterator it = friendlyBulletList.begin(); it != friendlyBulletList.end(); ++it)
+			{
+				Bullets *bt = (*it);
+				
+					bs2.Write(bt->getActive());
+					bs2.Write(bt->GetOwnerID());
+					bs2.Write(bt->GetX());
+					bs2.Write(bt->GetY());
+					bs2.Write(bt->GetW());
+				
+			}
+
 			rakpeer_->Send(&bs2, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			totalsent_ += bs2.GetNumberOfBytesUsed();
 
@@ -737,7 +862,7 @@ bool Application::Update()
 
 				rakpeer_->Send(&bs3, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			}
-			if (!friendlyBulletList.empty())
+			/*if (!friendlyBulletList.empty())
 			{
 				RakNet::BitStream bs4;
 				unsigned char deleted = 0;
@@ -765,7 +890,7 @@ bool Application::Update()
 				{
 					rakpeer_->Send(&bs4, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 				}
-			}
+			}*/
 		}
 	}
 	UpdateBoomList(timedelta);
@@ -787,7 +912,7 @@ void Application::Render()
 	hge_->Gfx_Clear(0);
 
 	//databox->mytext_ = "hi";
-	
+	blackHole->Render();
 
 	for (std::vector<Bullets*>::iterator it = friendlyBulletList.begin(); it != friendlyBulletList.end(); ++it)
 	{
@@ -828,12 +953,20 @@ void Application::Render()
 	{
 		(*it)->Render();
 	}
+	for (std::vector<Buff*>::iterator it = enemybuffList.begin(); it != enemybuffList.end(); ++it)
+	{
+		(*it)->Render();
+	}
 
 	fpsbox->Render();
 	databox->Render();
 	rejectBox->Render();
 	destoryedShipText->Render();
 	youDiedText->Render();
+
+	haveMissileText->Render();
+	missileReadyText->Render();
+	ammoLeftText->Render();
 
 	hge_->Gfx_EndScene();
 }
@@ -1051,6 +1184,8 @@ Bullets* Application::FetchBullets()
 		if (!bt->getActive())
 		{
 			bt->getActive() = true;
+			bt->SetIsDesapwn(false);
+			bt->SetIsDestroyed(false);
 			//++m_objectCount;
 			return bt;
 		}
@@ -1094,8 +1229,38 @@ Bullets* Application::FetchEnemyBullets()
 
 Buff* Application::FetchBuff()
 {
+	for (std::vector<Buff *>::iterator it = buffList.begin(); it != buffList.end(); ++it)
+	{
+		Buff *bt = (Buff *)*it;
+		if (!bt->getActive())
+		{
+			bt->getActive() = true;
+			//++m_objectCount;
+			return bt;
+		}
+	}
 	Buff *bt = new Buff(0,0,1);
 	buffList.push_back(bt);
+	//Buff *bt = buffList.back();
+	bt->getActive() = true;
+	//++m_objectCount;
+	return bt;
+}
+
+Buff* Application::FetchEnemyBuff()
+{
+	for (std::vector<Buff *>::iterator it = enemybuffList.begin(); it != enemybuffList.end(); ++it)
+	{
+		Buff *bt = (Buff *)*it;
+		if (!bt->getActive())
+		{
+			bt->getActive() = true;
+			//++m_objectCount;
+			return bt;
+		}
+	}
+	Buff *bt = new Buff(0, 0, 1);
+	enemybuffList.push_back(bt);
 	//Buff *bt = buffList.back();
 	bt->getActive() = true;
 	//++m_objectCount;

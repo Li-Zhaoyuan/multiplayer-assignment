@@ -33,6 +33,7 @@ public:
 	~Bullets();
 	bool Update(std::vector<Ship*> &shiplist, float timedelta);
 	void Render();
+	hgeRect* GetBoundingBox();
 	bool HasCollided(Ship &ship);
 
 	void UpdateLoc(float x, float y, float w)
@@ -95,6 +96,14 @@ public:
 		ownerid = id;
 		velocity_x_ = 200.0f * cosf(w_);
 		velocity_y_ = 200.0f * sinf(w_);
+	}
+	float &getVelocityX()
+	{
+		return velocity_x_;
+	}
+	float &getVelocityY()
+	{
+		return velocity_y_;
 	}
 };
 
