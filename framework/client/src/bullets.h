@@ -27,6 +27,16 @@ class Bullets
 	bool isDespawned;
 	bool active;
 
+	float server_x_;
+	float server_y_;
+	float server_w_;
+	float client_x_;
+	float client_y_;
+	float client_w_;
+	float server_velx_;
+	float server_vely_;
+	float ratio_;
+
 public:
 	float angular_velocity;
 	Bullets(char* filename, float x, float y, float w, int shipid);
@@ -46,6 +56,10 @@ public:
 	int GetOwnerID()
 	{
 		return ownerid;
+	}
+	void setID(int id)
+	{
+		ownerid = id;
 	}
 
 	float GetX() const
@@ -90,12 +104,15 @@ public:
 
 	void initialise(float x, float y, float w, int id)
 	{
-		x_ = x;
-		y_ = y;
+		x_ = server_x_ = client_x_ = x;
+		y_ = server_y_ = client_y_ = y;
 		w_ = w;
 		ownerid = id;
 		velocity_x_ = 200.0f * cosf(w_);
 		velocity_y_ = 200.0f * sinf(w_);
+		server_velx_ = velocity_x_;
+		server_vely_ = velocity_y_;
+		w_ = atan2(velocity_y_, velocity_x_);
 	}
 	float &getVelocityX()
 	{
@@ -104,6 +121,52 @@ public:
 	float &getVelocityY()
 	{
 		return velocity_y_;
+	}
+	float GetAngularVelocity() { return angular_velocity; }
+
+	void SetAngularVelocity(float av) { angular_velocity = av; }
+
+	void SetX(float x) { x_ = x; }
+	void SetY(float y) { y_ = y; }
+
+	void SetServerLocation(float x, float y, float w) {
+		server_x_ = x;
+		server_y_ = y;
+		server_w_ = w;
+	}
+
+	void SetServerVelocity(float vel_x, float vel_y, float angular)
+	{
+		server_velx_ = vel_x;
+		server_vely_ = vel_y;
+		angular_velocity = angular;
+	}
+
+	void SetServerVelocityX(float velocity) { server_velx_ = velocity; }
+	void SetServerVelocityY(float velocity) { server_vely_ = velocity; }
+
+	float &GetServerVelocityX() { return server_velx_; }
+	float &GetServerVelocityY() { return server_vely_; }
+
+	void SetServerX(float x) { server_x_ = x; }
+	void SetServerY(float y) { server_y_ = y; }
+	void SetServerW(float w) { server_w_ = w; }
+
+	float GetServerX() { return server_x_; }
+	float GetServerY() { return server_y_; }
+	float GetServerW() { return server_w_; }
+
+	void  SetRatio(float r) { ratio_ = r; }
+	float GetRatio() { return ratio_; }
+
+	void DoInterpolateUpdate()
+	{
+		client_x_ = x_;
+		client_y_ = y_;
+		client_w_ = w_;
+		velocity_x_ = server_velx_;
+		velocity_y_ = server_vely_;
+		ratio_ = 0;
 	}
 };
 

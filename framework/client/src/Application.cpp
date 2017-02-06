@@ -165,7 +165,7 @@ bool Application::Init()
         int ShipType = rand() % 4 + 1;
 
 		
-		
+		activeBullets = 0;
 		float init_pos_x = (float)(screenwidth/4);
         float init_pos_y = (float)(rand() % 400 + 100);
         ships_.push_back( new Ship( ShipType, init_pos_x, init_pos_y ) );
@@ -433,8 +433,8 @@ bool Application::Update()
 		readymissiles.append("false");
 	}
 	std::string ammoleft = "Ammo for lasergun : ";
-	ammoleft.append(std::to_string(3 - friendlyBulletList.size()) + "/3");
-	if (friendlyBulletList.size() > 0)
+	ammoleft.append(std::to_string(3 - activeBullets) + "/3");
+	if (activeBullets > 0)
 	{
 		ammoleft.append(" Recharging");
 	}
@@ -579,7 +579,7 @@ bool Application::Update()
 								totalreceived_ += bs.GetNumberOfBytesUsed();
 
 								unsigned int shipid, bulletShipid;
-								float server_x, server_y, server_w, bulletx,bullety,bulletw;
+								float server_x, server_y, server_w, bulletx, bullety, bulletw, bulletvx, bulletvy;
 								float server_vel_x, server_vel_y, server_vel_angular, time;
 								int health;
 								bool isActive,haveBuff, activeBullet;
@@ -610,6 +610,7 @@ bool Application::Update()
 											{
 												bs.Read(haveBuff);
 												(*it)->getActive() = haveBuff;
+
 											}
 										}
 
@@ -624,10 +625,15 @@ bool Application::Update()
 												bs.Read(bulletx);
 												bs.Read(bullety);
 												bs.Read(bulletw);
+												bs.Read(bulletvx);
+												bs.Read(bulletvy);
 												
 												bt->getActive() = activeBullet;
-												bt->initialise(bulletx, bullety, bulletw, bulletShipid);
-
+												bt->setID(bulletShipid);
+												//bt->initialise(bulletx, bullety, bulletw, bulletShipid);
+												bt->SetServerLocation(bulletx, bullety, bulletw);
+												bt->SetServerVelocity(bulletvx, bulletvy, 0);
+												bt->DoInterpolateUpdate();
 											}
 										}
 										destoryedShipText->mytext_ = str;
@@ -698,12 +704,13 @@ bool Application::Update()
 								  bs.Read(w);
 
 								  Bullets* bt = FetchEnemyBullets();
-								  bt->initialise(x, y, y, id);
+								  bt->initialise(x, y, w, id);
+								  //std::cout << "hi";
 			}
 				break;
 			case ID_UPDATEMISSILE:
 			{
-									 float x, y, w;
+									 float x, y, w,vx,vy;
 									 int id;
 									 char deleted;
 
@@ -725,7 +732,12 @@ bool Application::Update()
 												 bs.Read(x);
 												 bs.Read(y);
 												 bs.Read(w);
-												 (*itr)->UpdateLoc(x, y, w);
+												 bs.Read(vx);
+												 bs.Read(vy);
+												
+												 (*itr)->SetServerLocation(x, y, w);
+												 (*itr)->SetServerVelocity(vx, vy, 0);
+												 (*itr)->DoInterpolateUpdate();
 											 }
 											 break;
 										 }
@@ -733,34 +745,7 @@ bool Application::Update()
 
 			}
 				break;
-			case ID_UPDATEBULLET:
-			{
-									 float x, y, w;
-									 int id;
-									 char deleted;
-									 //bool active;
-
-									
-									 for (std::vector<Bullets *>::iterator it = enemyBulletList.begin(); it != enemyBulletList.end(); ++it)
-									 {
-										 if ((*it)->getActive())
-										 {
-											 bs.Read(id);
-											 bs.Read(deleted);
-											 bs.Read(x);
-											 bs.Read(y);
-											 bs.Read(w);
-											 // bs.Read(active);
-
-											 (*it)->initialise(x, y, w, id);
-										 }
-										 //(*it)->getActive() = active;
-									 }
-
-									 
-
-			}
-				break;
+			
 			case ID_NEWBUFF:
 			{
 							   
@@ -836,11 +821,14 @@ bool Application::Update()
 			{
 				Bullets *bt = (*it);
 				
-					bs2.Write(bt->getActive());
-					bs2.Write(bt->GetOwnerID());
-					bs2.Write(bt->GetX());
-					bs2.Write(bt->GetY());
-					bs2.Write(bt->GetW());
+				bs2.Write(bt->getActive());
+				bs2.Write(bt->GetOwnerID());
+				bs2.Write(bt->GetServerX());
+				bs2.Write(bt->GetServerY());
+				bs2.Write(bt->GetServerW());
+				bs2.Write(bt->GetServerVelocityX());
+				bs2.Write(bt->GetServerVelocityY());
+					
 				
 			}
 
@@ -853,12 +841,15 @@ bool Application::Update()
 				RakNet::BitStream bs3;
 				unsigned char msgid2 = ID_UPDATEMISSILE;
 				unsigned char deleted = 0;
+				
 				bs3.Write(msgid2);
 				bs3.Write(mymissile->GetOwnerID());
 				bs3.Write(deleted);
-				bs3.Write(mymissile->GetX());
-				bs3.Write(mymissile->GetY());
-				bs3.Write(mymissile->GetW());
+				bs3.Write(mymissile->GetServerX());
+				bs3.Write(mymissile->GetServerY());
+				bs3.Write(mymissile->GetServerW());
+				bs3.Write(mymissile->GetServerVelocityX());
+				bs3.Write(mymissile->GetServerVelocityY());
 
 				rakpeer_->Send(&bs3, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			}

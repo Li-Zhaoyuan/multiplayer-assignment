@@ -66,8 +66,8 @@ bool Blackhole::Update(Bullets* &bullet, float timedelta, bool isEnemy)
 			length = sqrt(newVelX * newVelX + newVelY * newVelY);
 			if (length < 1000)
 			{
-				bullet->getVelocityX() += (newVelX / length) * 100 * timedelta;
-				bullet->getVelocityY() += (newVelY / length) * 100 * timedelta;
+				bullet->GetServerVelocityX() += (newVelX / length) * 100 * timedelta;
+				bullet->GetServerVelocityY() += (newVelY / length) * 100 * timedelta;
 			}
 		}
 		if (HasCollided((*(bullet))) && (bullet)->getActive())//make sure the ship collided is active
@@ -96,8 +96,8 @@ bool Blackhole::Update(Missile* &missile, float timedelta, bool isEnemy)
 			length = sqrt(newVelX * newVelX + newVelY * newVelY);
 			if (length < 1500)
 			{
-				missile->getVelocityX() += (newVelX / length) * 100 * timedelta;
-				missile->getVelocityY() += (newVelY / length) * 100 * timedelta;
+				missile->GetServerVelocityX() += (newVelX / length) * 100 * timedelta;
+				missile->GetServerVelocityY() += (newVelY / length) * 100 * timedelta;
 			}
 		}
 		if (HasCollided((*(missile))) && (missile)->getActive())//make sure the ship collided is active
