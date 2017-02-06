@@ -34,6 +34,7 @@ class ServerApp
 	float timeFromLastFrame;
 	float timeToSpawnPowerUp;
 	float timeToSpawnBlackHole;
+	float timeToSpawnTimeBomb;
 	float screenwidth;
 	float screenheight;
 
@@ -45,6 +46,7 @@ class ServerApp
     void UpdatePosition( SystemAddress& addr, float x_, float y_ );
 	void spawnPowerUp();
 	void spawnBlackHole();
+	void spawnTimeBomb();
 public:
 	ServerApp();
 	~ServerApp();

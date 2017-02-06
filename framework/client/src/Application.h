@@ -11,6 +11,7 @@
 #include "bullets.h"
 #include "buff.h"
 #include "blackhole.h"
+#include "timebomb.h"
 
 class HGE;
 class RakPeerInterface;
@@ -85,6 +86,8 @@ class Application
 
 	Blackhole* blackHole;
 
+	Timebomb* localBomb;
+	Timebomb* opponentBomb;
 	//bool haveMissile;
 
 public:

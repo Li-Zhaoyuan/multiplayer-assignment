@@ -48,6 +48,9 @@
     <ClCompile Include="src\blackhole.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\timebomb.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ship.h">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\blackhole.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\timebomb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -12,7 +12,8 @@ x_(0),
 y_(0),
 w_(0),
 scale_(0.01f),
-active(false)
+active(false),
+maxScale(5.f)
 {
 	HGE* hge = hgeCreate(HGE_VERSION);
 	tex_ = hge->Texture_Load(filename);
@@ -31,7 +32,7 @@ Explosion::~Explosion()
 
 bool Explosion::Update(float timedelta)
 {
-	if (scale_ < 2.f)
+	if (scale_ < maxScale)
 	{
 		scale_ += 5 * timedelta;
 	}

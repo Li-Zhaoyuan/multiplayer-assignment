@@ -17,7 +17,8 @@ ServerApp::ServerApp() :
 	dt(0.f),
 	timeFromLastFrame(0.f),
 	timeToSpawnPowerUp(0.f),
-	timeToSpawnBlackHole(0.f)
+	timeToSpawnBlackHole(0.f),
+	timeToSpawnTimeBomb(0.0f)
 {
     rakpeer_->Startup( 100, 30, &SocketDescriptor( DFL_PORTNUMBER, 0 ), 1 );
     rakpeer_->SetMaximumIncomingConnections( DFL_MAX_CONNECTION );
@@ -39,6 +40,7 @@ void ServerApp::Loop()
 	{
 		timeToSpawnPowerUp += dt;
 		timeToSpawnBlackHole += dt;
+		timeToSpawnTimeBomb += dt;
 		if (timeToSpawnPowerUp >= 10.f)
 		{
 			spawnPowerUp();
@@ -49,11 +51,17 @@ void ServerApp::Loop()
 			spawnBlackHole();
 			timeToSpawnBlackHole = 0.f;
 		}
+		if (timeToSpawnTimeBomb> 20.f)
+		{
+			spawnTimeBomb();
+			timeToSpawnTimeBomb = 0.f;
+		}
 	}
 	else
 	{
 		timeToSpawnPowerUp = 0.f;
 		timeToSpawnBlackHole = 0.f;
+		timeToSpawnTimeBomb = 0.f;
 	}
 	if (Packet* packet = rakpeer_->Receive())
 	{
@@ -140,6 +148,26 @@ void ServerApp::spawnPowerUp()
 		bs.Write((screenwidth / 4) * 3);
 		bs.Write(LrandomY);
 		bs.Write(buffType);
+		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
+	}
+}
+
+void ServerApp::spawnTimeBomb()
+{
+	float RrandomY = rand() % 400 + 100;
+	float LrandomY = rand() % 400 + 100;
+	//int buffType = rand() % 2;
+
+	for (ClientMap::iterator it = clients_.begin(); it != clients_.end(); ++it)
+	{
+		unsigned char msgid = ID_SPAWNTIMEBOMB;
+		RakNet::BitStream bs;
+		bs.Write(msgid);
+		bs.Write(screenwidth / 4);
+		bs.Write(RrandomY);
+		bs.Write((screenwidth / 4) * 3);
+		bs.Write(LrandomY);
+		bs.Write(10.f);
 		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
 	}
 }

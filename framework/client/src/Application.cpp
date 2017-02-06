@@ -173,6 +173,8 @@ bool Application::Init()
 		ships_.at(0)->SetName("My Ship");
 
 		blackHole = new Blackhole("blackhole.png",0,0,0);
+		localBomb = new Timebomb("bomb.png", 0, 0, 0);;
+		opponentBomb = new Timebomb("bomb.png", 0, 0, 0);;
 
 		if (rakpeer_->Startup(1,30,&SocketDescriptor(), 1))
 		{
@@ -443,6 +445,20 @@ bool Application::Update()
 	missileReadyText->mytext_ = readymissiles;
 	ammoLeftText->mytext_ = ammoleft;
 	
+	localBomb->Update(ships_.at(0), timedelta,true);
+	if (localBomb->getDoExplosion())
+	{
+		Explosion *ex = FetchBoom();
+		ex->setPos(localBomb->GetX(), localBomb->GetY());
+		localBomb->setDoExplosion(false);
+	}
+	opponentBomb->Update(ships_.at(0), timedelta,false);
+	if (opponentBomb->getDoExplosion())
+	{
+		Explosion *ex = FetchBoom();
+		ex->setPos(opponentBomb->GetX(), opponentBomb->GetY());
+		opponentBomb->setDoExplosion(false);
+	}
 
 	if (!rejectedFromServer)
 	{
@@ -580,9 +596,9 @@ bool Application::Update()
 
 								unsigned int shipid, bulletShipid;
 								float server_x, server_y, server_w, bulletx, bullety, bulletw, bulletvx, bulletvy;
-								float server_vel_x, server_vel_y, server_vel_angular, time;
+								float server_vel_x, server_vel_y, server_vel_angular, time, timeleftForBomb;
 								int health;
-								bool isActive,haveBuff, activeBullet;
+								bool isActive,haveBuff, activeBullet, activebomb;
 								bs.Read(shipid);
 								std::string str = "";
 								for (ShipList::iterator itr = ships_.begin(); itr != ships_.end(); ++itr)
@@ -636,6 +652,13 @@ bool Application::Update()
 												bt->DoInterpolateUpdate();
 											}
 										}
+
+										bs.Read(activebomb);
+										bs.Read(timeleftForBomb);
+
+										opponentBomb->getActive() = activebomb;
+										opponentBomb->setTimeLeft(timeleftForBomb);
+
 										destoryedShipText->mytext_ = str;
 
 										(*itr)->SetServerLocation(server_x, server_y, server_w);
@@ -783,6 +806,35 @@ bool Application::Update()
 									  blackHole->initialise(x, y,0);
 			}
 				break;
+			case ID_SPAWNTIMEBOMB:
+			{
+									 float timeleft;
+									 float x1, x2, y1, y2;
+									 bs.Read(x1);
+									 bs.Read(y1);
+									 bs.Read(x2);
+									 bs.Read(y2);
+									 bs.Read(timeleft);
+									 if (x1 == ships_.at(0)->GetX())
+									 {
+										 localBomb->getActive() = true;
+										 localBomb->initialise(x1,y1,0);
+										 localBomb->setTimeLeft(timeleft);
+										 opponentBomb->getActive() = true;
+										 opponentBomb->initialise(x2, y2, 0);
+										 opponentBomb->setTimeLeft(timeleft);
+									 }
+									 else
+									 {
+										 opponentBomb->getActive() = true;
+										 opponentBomb->initialise(x1, y1, 0);
+										 opponentBomb->setTimeLeft(timeleft);
+										 localBomb->getActive() = true;
+										 localBomb->initialise(x2, y2, 0);
+										 localBomb->setTimeLeft(timeleft);
+									 }
+			}
+				break;
 			default:
 				std::cout << "Unhandled Message Identifier: " << (int)msgid << std::endl;
 
@@ -831,6 +883,9 @@ bool Application::Update()
 					
 				
 			}
+
+			bs2.Write(localBomb->getActive());
+			bs2.Write(localBomb->getTimeLeft());
 
 			rakpeer_->Send(&bs2, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);
 			totalsent_ += bs2.GetNumberOfBytesUsed();
@@ -948,6 +1003,9 @@ void Application::Render()
 	{
 		(*it)->Render();
 	}
+
+	localBomb->Render();
+	opponentBomb->Render();
 
 	fpsbox->Render();
 	databox->Render();

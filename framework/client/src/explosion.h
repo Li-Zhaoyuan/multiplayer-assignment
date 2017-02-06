@@ -18,6 +18,7 @@ class Explosion
 	float y_; //!< The y-ordinate of the asteroid
 	float w_; //!< The angular position of the asteroid
 	float scale_;
+	float maxScale;
 	bool active;
 	//hgeRect collidebox; //!< For use in collision detection
 
@@ -30,6 +31,10 @@ public:
 	void setActive(bool active);
 	bool getActive();
 	void setPos(float x, float y);
+	void setMaxScale(float number)
+	{
+		maxScale = number;
+	}
 	//bool HasCollided(Ship &ship);
 
 };
