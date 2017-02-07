@@ -113,6 +113,18 @@ Application::~Application() throw()
 		enemybuffList.pop_back();
 	}
 
+	if (mymissile != NULL)
+	{
+		delete mymissile;
+	}
+
+	while (missiles_.size() > 0)
+	{
+		Missile *ex = missiles_.back();
+		delete ex;
+		missiles_.pop_back();
+	}
+
 	/*if (!inactive_buffList.empty())
 	{
 		inactive_buffList.clear();
