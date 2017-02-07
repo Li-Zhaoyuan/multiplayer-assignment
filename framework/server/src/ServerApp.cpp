@@ -34,7 +34,7 @@ ServerApp::~ServerApp()
 
 void ServerApp::Loop()
 {
-	dt = (RakNet::GetTime() - timeFromLastFrame)/1000;
+	dt = (RakNet::GetTime() - timeFromLastFrame)/1000.0f;
 	timeFromLastFrame = RakNet::GetTime();
 	if (clients_.size() >= 2)
 	{

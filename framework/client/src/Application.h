@@ -88,6 +88,8 @@ class Application
 
 	Timebomb* localBomb;
 	Timebomb* opponentBomb;
+
+	void ResetClient();
 	//bool haveMissile;
 
 public:
