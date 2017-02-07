@@ -69,6 +69,7 @@ class Ship
 	bool haveMissile;
 
 	float timerForRespawn;
+	int missileLeft;
 public:
 
     Ship( int type, float locx_, float locy_ );
@@ -203,6 +204,10 @@ public:
 	bool getHaveMissile()
 	{
 		return haveMissile;
+	}
+	int& getMissileCount()
+	{
+		return missileLeft;
 	}
 };
 

@@ -54,6 +54,7 @@ bool Timebomb::Update(Ship* &ship, float timedelta, bool isLocal)
 		}
 		else
 		{
+			//timeleft = 10.f;
 			active = false;
 			doExplosion = true;
 		}
@@ -63,6 +64,7 @@ bool Timebomb::Update(Ship* &ship, float timedelta, bool isLocal)
 			// if both are stuck	
 			ship->getHealth() -= 50;
 			collision = true;
+			
 			return true;
 
 
@@ -78,6 +80,7 @@ bool Timebomb::Update(Ship* &ship, float timedelta, bool isLocal)
 		}
 		else
 		{
+			//timeleft = 10.f;
 			active = false;
 			doExplosion = true;
 		}
@@ -91,7 +94,7 @@ void Timebomb::Render()
 {
 	if (active)
 	{
-		sprite_->RenderEx(x_, y_, w_);
+		sprite_->RenderEx(x_ + 20, y_, w_);
 		timeLeftText->Render();
 	}
 }

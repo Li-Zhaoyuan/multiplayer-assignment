@@ -75,6 +75,7 @@ bool Buff::Update(std::vector<Ship*> &shiplist, float timedelta)
 				else if (bufftype == 0 && thisship == shiplist.begin())
 				{
 					(*thisship)->setHaveMissile(true);
+					(*thisship)->getMissileCount() += 1;
 				}
 			}
 			isTouched = true;

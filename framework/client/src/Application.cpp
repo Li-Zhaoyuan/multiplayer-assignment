@@ -105,6 +105,12 @@ Application::~Application() throw()
 		delete ex;
 		buffList.pop_back();
 	}
+	while (enemybuffList.size() > 0)
+	{
+		Buff *ex = enemybuffList.back();
+		delete ex;
+		enemybuffList.pop_back();
+	}
 
 	/*if (!inactive_buffList.empty())
 	{
@@ -173,8 +179,8 @@ bool Application::Init()
 		ships_.at(0)->SetName("My Ship");
 
 		blackHole = new Blackhole("blackhole.png",0,0,0);
-		localBomb = new Timebomb("bomb.png", 0, 0, 0);;
-		opponentBomb = new Timebomb("bomb.png", 0, 0, 0);;
+		localBomb = new Timebomb("bomb.png", 0, 0, 0);
+		opponentBomb = new Timebomb("bomb.png", 0, 0, 0);
 
 		if (rakpeer_->Startup(1,30,&SocketDescriptor(), 1))
 		{
@@ -183,6 +189,73 @@ bool Application::Init()
 		}
 	}
 	return false;
+}
+
+void Application::ResetClient()
+{
+	while (boomList.size() > 0)
+	{
+		Explosion *ex = boomList.back();
+		delete ex;
+		boomList.pop_back();
+	}
+
+	while (friendlyBulletList.size() > 0)
+	{
+		Bullets *ex = friendlyBulletList.back();
+		delete ex;
+		friendlyBulletList.pop_back();
+	}
+
+	while (enemyBulletList.size() > 0)
+	{
+		Bullets *ex = enemyBulletList.back();
+		delete ex;
+		enemyBulletList.pop_back();
+	}
+	while (buffList.size() > 0)
+	{
+		Buff *ex = buffList.back();
+		delete ex;
+		buffList.pop_back();
+	}
+
+	while (enemybuffList.size() > 0)
+	{
+		Buff *ex = enemybuffList.back();
+		delete ex;
+		enemybuffList.pop_back();
+	}
+
+
+	 
+	if (mymissile != NULL)
+	{
+		delete mymissile;
+	}
+
+	while (missiles_.size() > 0)
+	{
+		Missile *ex = missiles_.back();
+		delete ex;
+		missiles_.pop_back();
+	}
+
+	blackHole->getActive() = false;
+
+	if (localBomb != NULL)
+	{
+		delete localBomb;
+		localBomb = new Timebomb("bomb.png", 0, 0, 0);
+	}
+	
+	if (opponentBomb != NULL)
+	{
+		delete opponentBomb;
+		opponentBomb = new Timebomb("bomb.png", 0, 0, 0);
+	}
+	//opponentBomb = new Timebomb("bomb.png", 0, 0, 0);
+
 }
 
 /**
@@ -232,12 +305,14 @@ bool Application::Update()
 		}
 
 
-		if (hge_->Input_GetKeyState(HGEK_C) && mymissile == NULL && ships_.at(0)->getHaveMissile())
+		if (hge_->Input_GetKeyState(HGEK_C) && mymissile == NULL  && ships_.at(0)->getMissileCount() > 0/*&& ships_.at(0)->getHaveMissile()*/)
 		{
+
 			
 				CreateMissile(ships_.at(0)->GetX(), ships_.at(0)->GetY(), ships_.at(0)->GetW(), ships_.at(0)->GetID());
 				keydown_enter = true;
 				ships_.at(0)->setHaveMissile(false);
+				ships_.at(0)->getMissileCount() -= 1;
 		}
 		bulletFireRate += timedelta;
 		if (hge_->Input_GetKeyState(HGEK_SPACE) && bulletFireRate > 0.5f && activeBullets < 3)
@@ -416,15 +491,10 @@ bool Application::Update()
 		}
 		inactive_buffList.clear();
 	}*/
-	std::string havemissiles = "Have Missiles? : ";
-	if (ships_.at(0)->getHaveMissile())
-	{
-		havemissiles.append("true");
-	}
-	else
-	{
-		havemissiles.append("false");
-	}
+	std::string havemissiles = "Have Missiles Count : ";
+	
+	havemissiles.append(std::to_string(ships_.at(0)->getMissileCount()));
+	
 	std::string readymissiles = "Able to Fire missile? : ";
 	if (mymissile == NULL)
 	{
@@ -542,6 +612,7 @@ bool Application::Update()
 				break;
 			case ID_NEWSHIP:
 			{
+							ResetClient();
 							   unsigned int id;
 							   bs.Read(id);
 
@@ -653,11 +724,12 @@ bool Application::Update()
 											}
 										}
 
-										bs.Read(activebomb);
+										//bs.Read(activebomb);
 										bs.Read(timeleftForBomb);
 
-										opponentBomb->getActive() = activebomb;
-										opponentBomb->setTimeLeft(timeleftForBomb);
+										//opponentBomb->getActive() = activebomb;
+										if (timeleftForBomb > 0)
+											opponentBomb->setTimeLeft(timeleftForBomb);
 
 										destoryedShipText->mytext_ = str;
 
@@ -820,18 +892,22 @@ bool Application::Update()
 										 localBomb->getActive() = true;
 										 localBomb->initialise(x1,y1,0);
 										 localBomb->setTimeLeft(timeleft);
+										 localBomb->setDoExplosion(false);
 										 opponentBomb->getActive() = true;
 										 opponentBomb->initialise(x2, y2, 0);
 										 opponentBomb->setTimeLeft(timeleft);
+										 opponentBomb->setDoExplosion(false);
 									 }
 									 else
 									 {
 										 opponentBomb->getActive() = true;
 										 opponentBomb->initialise(x1, y1, 0);
 										 opponentBomb->setTimeLeft(timeleft);
+										 opponentBomb->setDoExplosion(false);
 										 localBomb->getActive() = true;
 										 localBomb->initialise(x2, y2, 0);
 										 localBomb->setTimeLeft(timeleft);
+										 localBomb->setDoExplosion(false);
 									 }
 			}
 				break;
@@ -884,7 +960,7 @@ bool Application::Update()
 				
 			}
 
-			bs2.Write(localBomb->getActive());
+			//bs2.Write(localBomb->getActive());
 			bs2.Write(localBomb->getTimeLeft());
 
 			rakpeer_->Send(&bs2, HIGH_PRIORITY, UNRELIABLE_SEQUENCED, 0, UNASSIGNED_SYSTEM_ADDRESS, true);

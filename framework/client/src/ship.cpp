@@ -28,6 +28,8 @@ Ship::Ship( int type, float locx_, float locy_ )
 , collidetimer( 0 )
 , health(100)
 , timerForRespawn(0.f)
+, missileLeft(0)
+, active(true)
 , haveMissile(false)
 #ifdef INTERPOLATEMOVEMENT
 , server_w_( 0 )
@@ -35,7 +37,7 @@ Ship::Ship( int type, float locx_, float locy_ )
 , server_velx_( 0 )
 , server_vely_( 0 )
 , ratio_( 1 )
-, active(true)
+
 #endif
 {
     std::cout << "Creating Ship " << type << " " << locx_ << " " << locy_ << std::endl;
