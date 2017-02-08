@@ -137,19 +137,19 @@ void ServerApp::spawnPowerUp()
 	float RrandomY = rand() % 400 + 100;
 	float LrandomY = rand() % 400 + 100;
 	int buffType = rand() % 2;
-
+	unsigned char msgid = ID_NEWBUFF;
+	RakNet::BitStream bs;
+	bs.Write(msgid);
+	bs.Write(screenwidth / 4);
+	bs.Write(RrandomY);
+	bs.Write((screenwidth / 4) * 3);
+	bs.Write(LrandomY);
+	bs.Write(buffType);
 	for (ClientMap::iterator it = clients_.begin(); it != clients_.end(); ++it)
-	{
-		unsigned char msgid = ID_NEWBUFF;
-		RakNet::BitStream bs;
-		bs.Write(msgid);
-		bs.Write(screenwidth/4);
-		bs.Write(RrandomY);
-		bs.Write((screenwidth / 4) * 3);
-		bs.Write(LrandomY);
-		bs.Write(buffType);
+	{	
 		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
 	}
+	bs.Reset();
 }
 
 void ServerApp::spawnTimeBomb()
@@ -158,34 +158,35 @@ void ServerApp::spawnTimeBomb()
 	float LrandomY = rand() % 400 + 100;
 	//int buffType = rand() % 2;
 
+	unsigned char msgid = ID_SPAWNTIMEBOMB;
+	RakNet::BitStream bs;
+	bs.Write(msgid);
+	bs.Write(screenwidth / 4.f);
+	bs.Write(RrandomY);
+	bs.Write((screenwidth / 4.f) * 3.f);
+	bs.Write(LrandomY);
+	bs.Write(10.f);
 	for (ClientMap::iterator it = clients_.begin(); it != clients_.end(); ++it)
 	{
-		unsigned char msgid = ID_SPAWNTIMEBOMB;
-		RakNet::BitStream bs;
-		bs.Write(msgid);
-		bs.Write(screenwidth / 4);
-		bs.Write(RrandomY);
-		bs.Write((screenwidth / 4) * 3);
-		bs.Write(LrandomY);
-		bs.Write(10.f);
 		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
 	}
+	bs.Reset();
 }
 
 void ServerApp::spawnBlackHole()
 {
 	float randomY = rand() % 400 + 100;
 	float X = (screenwidth / 2);
+	unsigned char msgid = ID_SPAWNBLACKHOLE;
+	RakNet::BitStream bs;
+	bs.Write(msgid);
+	bs.Write(X);
+	bs.Write(randomY);
 	for (ClientMap::iterator it = clients_.begin(); it != clients_.end(); ++it)
 	{
-		unsigned char msgid = ID_SPAWNBLACKHOLE;
-		RakNet::BitStream bs;
-		bs.Write(msgid);
-		bs.Write(X);
-		bs.Write(randomY);
-		
 		rakpeer_->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, (it)->first, true);
 	}
+	bs.Reset();
 }
 
 void ServerApp::SendWelcomePackage(SystemAddress& addr)

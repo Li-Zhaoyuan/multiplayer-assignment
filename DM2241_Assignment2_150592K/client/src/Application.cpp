@@ -528,11 +528,14 @@ bool Application::Update()
 	if (activeBullets == 3)
 	{
 		bulletIsRecharging = true;
-		ammoleft.append(" Recharging");
 	}
 	if (activeBullets == 0)
 	{
 		bulletIsRecharging = false;
+	}
+	if (bulletIsRecharging)
+	{
+		ammoleft.append(" Recharging");
 	}
 	
   	haveMissileText->mytext_ = havemissiles;
